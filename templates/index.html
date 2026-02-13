@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormLancer | Professional Intake</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #0d6efd 0%, #000000 100%);
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            align-items: center;
+        }
+        .logo-img {
+            width: 120px; /* Adjust size as needed */
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="container text-center">
+            <div class="d-flex align-items-center justify-content-center mb-4">
+                <img src="{{ url_for('static', filename='logo.svg') }}" height="80" class="me-3">
+                <h1 class="display-3 fw-bold mb-0">FormLancer</h1>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <p class="lead mb-5">The frictionless intake system for video editors and creative freelancers.</p>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg px-5 shadow">Login</a>
+                <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg px-5">Sign Up</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

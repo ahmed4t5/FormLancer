@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+    body {
+        background: linear-gradient(135deg, #0d6efd 0%, #000000 100%);
+        background-attachment: fixed; /* Keeps the gradient from stretching weirdly */
+        min-height: 100vh;
+        color: white; /* Makes text readable on the dark background */
+    }
+    .card {
+        background: rgba(255, 255, 255, 0.95); /* Semi-transparent white card */
+        color: #333; /* Keeps form text dark for readability */
+        border: none;
+        border-radius: 15px;
+    }
+</style>
+    <title>Advanced Form Builder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light p-5">
+    <div class="container bg-white p-4 shadow rounded">
+    <h3>Advanced Form Builder</h3>
+    <form method="POST" id="main-form">
+        <div class="card mb-4 p-3 border-primary shadow-sm">
+    <div class="row align-items-center">
+        <div class="col-md-2">
+            <h5 class="mb-0">Form Title</h5>
+        </div>
+        <div class="col-md-10">
+            <input type="text" name="form_name" class="form-control form-control-lg" 
+                   value="{{ form_obj.name }}" placeholder="e.g., Wedding Photography Inquiry" required>
+        </div>
+    </div>
+</div>
+        <div class="card mb-4 p-3 border-info shadow-sm bg-light">
+    <div class="row align-items-center">
+        <div class="col-md-3">
+            <h5 class="mb-0">Brand Customization</h5>
+            <small class="text-muted">Set your form's look and feel</small>
+        </div>
+        <div class="col-md-2">
+            <label class="small fw-bold">Primary (Buttons)</label>
+            <input type="color" name="brand_color" class="form-control form-control-color w-100" value="{{ form_obj.brand_color or '#0d6efd' }}">
+        </div>
+        <div class="col-md-2">
+            <label class="small fw-bold">Accent (Background)</label>
+            <input type="color" name="accent_color" class="form-control form-control-color w-100" value="{{ form_obj.accent_color or '#e9ecef' }}">
+        </div>
+        <div class="col-md-5">
+            <label class="small fw-bold">Logo URL</label>
+            <input type="text" name="logo_url" class="form-control form-control-sm" value="{{ form_obj.logo_url or '' }}" placeholder="https://example.com/logo.png">
+        </div>
+    </div>
+</div>
+        <div id="builder-container"></div>
+        <hr>
+        <button type="button" class="btn btn-primary mb-3" onclick="addSection()">+ Add New Section</button>
+        <button type="submit" class="btn btn-success w-100" onclick="prepareData()">Save Everything</button>
+    </form>
+</div>
+
+    <script>
+let sectionCount = 0;
+
+// 1. MISSING FUNCTION: Adds the Section Card
+function addSection(name = '', existingQuestions = []) {
+    sectionCount++;
+    const sId = `section_${sectionCount}`;
+    const div = document.createElement('div');
+    div.className = "card mb-4 border-dark section-card";
+    div.innerHTML = `
+        <div class="card-header bg-dark text-white d-flex gap-2">
+            <input type="text" name="section_title" class="form-control form-control-sm" 
+                   placeholder="Section Name (e.g., Project Basics)" value="${name}" required>
+            <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.section-card').remove()">Remove Section</button>
+        </div>
+        <div class="card-body bg-light question-container" id="${sId}"></div>
+        <div class="card-footer">
+            <button type="button" class="btn btn-sm btn-secondary" onclick="addQuestion('${sId}')">+ Add Question</button>
+        </div>
+    `;
+    document.getElementById('builder-container').appendChild(div);
+
+    // If loading existing data, populate questions into this section
+    existingQuestions.forEach(q => addQuestion(sId, q));
+}
+
+// 2. Updated Question Function (handles options and logic)
+function addQuestion(containerId, data = {}) {
+    const container = document.getElementById(containerId);
+    const div = document.createElement('div');
+    div.className = "bg-white p-3 border rounded mb-2 shadow-sm";
+    const isRequired = data.required ? 'checked' : '';
+    div.innerHTML = `
+        <div class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <input type="text" name="q_label" class="form-control" placeholder="Question" value="${data.label || ''}">
+            </div>
+            <div class="col-md-2">
+                <select name="q_type" class="form-select" onchange="toggleOptions(this)">
+                  <option value="text" ${data.type=='text'?'selected':''}>Text</option>
+                  <option value="number" ${data.type=='number'?'selected':''}>Number</option>
+                  <option value="date" ${data.type=='date'?'selected':''}>Date Picker</option>
+                  <option value="boolean" ${data.type=='boolean'?'selected':''}>Yes/No (Logic)</option>
+                  <option value="file" ${data.type=='file'?'selected':''}>File Upload</option>
+                  <option value="dropdown" ${data.type=='dropdown'?'selected':''}>Standard Dropdown</option> <option value="multi" ${data.type=='multi'?'selected':''}>Multi-Select</option>
+                  <option value="select_other" ${data.type=='select_other'?'selected':''}>Dropdown + Other</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="text" name="q_options" class="form-control opt-field" 
+                       style="display: ${ (data.type==='multi') ? 'block' : 'none' }"
+                       placeholder="Options (comma separated)" value="${data.options || ''}">
+            </div>
+            <div class="col-md-2">
+                <div class="form-check">
+                    <input class="form-check-input q-req-check" type="checkbox" ${isRequired}>
+                    <label class="form-check-label small">Required</label>
+                </div>
+                <input type="hidden" name="q_required" class="q-req-hidden" value="${data.required ? '1' : '0'}">
+            </div>
+            <div class="col-md-2">
+                <input type="text" name="q_logic" class="form-control" placeholder="Logic Parent" value="${data.logic || ''}">
+            </div>
+            <input type="hidden" name="q_section_ref" class="section-ref">
+            <div class="col-md-1">
+                <button type="button" class="btn btn-outline-danger w-100" onclick="this.closest('.bg-white').remove()">×</button>
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+    // Sync the checkbox to the hidden input so Flask can read it easily
+    const check = div.querySelector('.q-req-check');
+    const hidden = div.querySelector('.q-req-hidden');
+    check.addEventListener('change', () => {
+        hidden.value = check.checked ? "1" : "0";
+    });
+}
+
+function toggleOptions(select) {
+    const optField = select.closest('.row').querySelector('.opt-field');
+    // Ensure 'multi' is included here so the freelancer can type the options
+    if (select.value === 'multi' || select.value === 'select_other' || select.value === 'dropdown') {
+        optField.style.display = 'block';
+    } else {
+        optField.style.display = 'none';
+    }
+}
+
+// 3. MISSING FUNCTION: Links questions to sections before saving
+function prepareData() {
+    document.querySelectorAll('.section-card').forEach(section => {
+        const sectionTitle = section.querySelector('input[name="section_title"]').value;
+        section.querySelectorAll('.section-ref').forEach(ref => {
+            ref.value = sectionTitle;
+        });
+    });
+}
+
+// 4. AUTO-LOAD: Rebuilds the form from your database
+const rawData = '{{ fields|tojson|safe }}';
+const savedFields = JSON.parse(rawData);
+
+if (savedFields.length > 0) {
+    const groups = savedFields.reduce((acc, q) => {
+        acc[q.section] = acc[q.section] || [];
+        acc[q.section].push(q);
+        return acc;
+    }, {});
+    
+    for (const section in groups) {
+        addSection(section, groups[section]);
+    }
+} else {
+    addSection('Project Basics'); // Starts a new user with 1 section
+}
+</script>
+</body>
+</html>

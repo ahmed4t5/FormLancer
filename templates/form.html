@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freelancer Intake Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .form-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0px 0px 20px rgba(0,0,0,0.1); margin-top: 50px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 form-container">
+                <h2 class="text-center mb-4">Project Request Form</h2>
+                <p class="text-muted text-center">Please provide details to minimize back-and-forth communication.</p>
+                
+                <form action="/submit" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="John Doe" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Service Required</label>
+                        <select name="service" class="form-select">
+                            <option value="Video Editing">Video Editing</option>
+                            <option value="Graphic Design">Graphic Design</option>
+                            <option value="Consultation">Consultation</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Project Details</label>
+                        <textarea name="details" class="form-control" rows="4" placeholder="Describe your deadline and requirements..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Submit Request</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

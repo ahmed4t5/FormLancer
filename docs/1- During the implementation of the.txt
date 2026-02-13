@@ -1,0 +1,8 @@
+1- During the implementation of the routing logic, a 404 Not Found error was encountered. This was identified as a routing mismatch between the Flask decorator and the client-side URL request. This highlighted the importance of strict URL mapping and the 'Convention over Configuration' principle used by the Flask framework.
+
+A significant hurdle during the environment setup was the configuration of the Conda environment within the VS Code integrated terminal. Initial attempts to activate a local .conda environment folder failed due to path recognition issues in PowerShell. To resolve this, the development environment was switched to the Windows Command Prompt (cmd), and dependencies were managed via the base Anaconda distribution. This ensured a stable runtime environment for the Flask server."
+
+Test Case ID: TC-001 Test Description: Environment Initialization and Library Mapping. Expected Result: Flask server initializes on Port 5001. Actual Result: Initial failure due to interpreter path mismatch; resolved by manually mapping the Python executable path in the CLI. Status: Passed (after mitigation).
+
+How system works- 
+"The system utilizes an SQLite database managed via Flask-SQLAlchemy. Following the 'Instance Folder' pattern, the application separates the code logic from the data storage (requests.db). This ensures that sensitive database files are kept in a dedicated environment, preventing accidental exposure during version control (Git) uploads."

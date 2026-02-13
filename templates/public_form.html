@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Submit Project | {{ user.username }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+    /* 1. Define the variable with a safe fallback */
+    :root {
+        --primary-color: {{ form_obj.brand_color }};
+        --bg-color: {{ form_obj.accent_color }};
+    }
+    body { background-color: var(--bg-color); }
+    .btn-primary { background-color: var(--primary-color); border: none; }
+    .brand-text { color: var(--primary-color); }
+    .logic-hidden { display: none; }
+    
+    .section-header { 
+        border-left: 5px solid var(--brand-color); 
+        padding-left: 15px; 
+        color: var(--brand-color) !important;
+    }
+
+    .btn-primary:hover { 
+        filter: brightness(90%);
+        background-color: var(--brand-color);
+    }
+</style>
+</head>
+<body class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            
+           <div class="card shadow-sm p-4 mb-4 text-center">
+    {% if form_obj.logo_url and form_obj.logo_url != "" %}
+<img src="{{ form_obj.logo_url }}" alt="Logo" class="mb-3 mx-auto" style="max-height: 80px; width: auto;">    {% endif %}
+    <h2 class="brand-text">{{ form_obj.name }}</h2>
+    <p class="text-muted">Working with <strong>{{ user.username }}</strong></p>
+</div>
+
+            <form action="{{ url_for('submit_request', user_id=user.id, form_id=form_obj.id) }}" method="POST" enctype="multipart/form-data">
+                <div class="card shadow-sm p-4 mb-4">
+                    <label class="form-label fw-bold h5">Full Name / Company Name</label>
+                    <input type="text" name="client_name" class="form-control form-control-lg" required placeholder="Who are you?">
+                </div>
+
+                {% set unique_sections = [] %}
+                {% for field in fields %}
+                  {% if field.section not in unique_sections %}
+                     {% do unique_sections.append(field.section) %}
+                  {% endif %}
+                {% endfor %}
+
+{% for section_name in unique_sections %}
+<div class="mb-5">
+    <h4 class="section-header mb-3">{{ section_name }}</h4>
+    <div class="card shadow-sm p-4">
+        {% for field in fields if field.section == section_name %}
+        <div class="mb-3 field-container" data-logic-parent="{{ field.logic }}">
+            <label class="form-label fw-bold">
+                {{ field.label }} 
+                {% if field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+
+            {% if field.type == 'text' %}
+                <input type="text" name="{{ field.label }}" class="form-control" {% if field.required %}required{% endif %}>
+
+            {% elif field.type == 'number' %}
+                <input type="number" name="{{ field.label }}" class="form-control" {% if field.required %}required{% endif %}>
+
+            {% elif field.type == 'url' %}
+                <input type="url" name="{{ field.label }}" class="form-control" placeholder="https://..." {% if field.required %}required{% endif %}>
+
+            {% elif field.type == 'date' %}
+                <input type="date" name="{{ field.label }}" class="form-control" {% if field.required %}required{% endif %}>
+
+            {% elif field.type == 'file' %}
+                <input type="file" name="{{ field.label }}" class="form-control" {% if field.required %}required{% endif %}>
+
+            {% elif field.type == 'boolean' %}
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="{{ field.label }}" value="Yes" id="{{ field.label }}_y" {% if field.required %}required{% endif %}>
+                    <label class="form-check-label" for="{{ field.label }}_y">Yes</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="{{ field.label }}" value="No" id="{{ field.label }}_n" {% if field.required %}required{% endif %}>
+                    <label class="form-check-label" for="{{ field.label }}_n">No</label>
+                </div>
+
+            {% elif field.type == 'multi' %}
+            <div class="p-3 border rounded bg-white shadow-sm {% if field.required %}required-group{% endif %}" 
+                 data-label="{{ field.label }}">
+                <p class="text-muted small mb-2">Select all that apply: {% if field.required %}<span class="text-danger">*</span>{% endif %}</p>
+                {% for opt in field.options.split(',') %}
+                    {% set option_id = field.label ~ loop.index %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" 
+                               name="{{ field.label }}[]" 
+                               value="{{ opt.strip() }}" 
+                               id="{{ option_id }}">
+                        <label class="form-check-label" for="{{ option_id }}">
+                            {{ opt.strip() }}
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% elif field.type == 'select_other' %}
+                <select name="{{ field.label }}" class="form-select mb-2" onchange="checkOther(this)" {% if field.required %}required{% endif %}>
+                    <option value="">Choose an option...</option>
+                    {% for opt in field.options.split(',') %}
+                        <option value="{{ opt.strip() }}">{{ opt.strip() }}</option>
+                    {% endfor %}
+                    <option value="Other">Other...</option>
+                </select>
+                <input type="text" name="{{ field.label }}_other" class="form-control d-none" placeholder="Please specify your other option">
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+                <div class="d-grid gap-2 mb-5">
+                    <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm" id="submitBtn">Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Logic Triggers
+        document.querySelectorAll('.logic-trigger').forEach(trigger => {
+            trigger.addEventListener('change', function() {
+                const val = this.value;
+                const label = this.getAttribute('data-label');
+                
+                document.querySelectorAll('.question-wrapper').forEach(wrapper => {
+                    if (wrapper.getAttribute('data-logic-target') === label) {
+                        if (val === 'Yes') wrapper.classList.remove('logic-hidden');
+                        else wrapper.classList.add('logic-hidden');
+                    }
+                });
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const form = document.querySelector('form');
+            const submitBtn = document.getElementById('submitBtn');
+
+            form.onsubmit = function(e) {
+                let isValid = true;
+        
+        // 1. Checkbox Validation (The logic we fixed earlier)
+                const requiredGroups = document.querySelectorAll('.required-group');
+                requiredGroups.forEach(group => {
+                    const checkboxes = group.querySelectorAll('input[type="checkbox"]');
+                    const label = group.getAttribute('data-label');
+                    const isChecked = Array.from(checkboxes).some(cb => cb.checked);
+            
+                    if (!isChecked) {
+                        alert("Please select at least one option for: " + label);
+                        isValid = false;
+                    }
+                });
+
+        // 2. If valid, show processing state
+                if (isValid) {
+            // Disable button to prevent double-clicks
+                    submitBtn.disabled = true;
+            // Add a loading spinner and change text
+                    submitBtn.innerHTML = `
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Uploading & Sending...
+                    `;
+                    return true; 
+                } else {
+                    e.preventDefault(); // Stop form if checkboxes aren't picked
+                    return false;
+                }
+            };
+        });
+
+        // Other option toggle
+                function checkOther(select) {
+    // Find the 'other' input which is the next element after the select
+            const otherInput = select.nextElementSibling;
+            if (select.value === 'Other') {
+                otherInput.classList.remove('d-none');
+                otherInput.setAttribute('required', 'required');
+            } else {
+                otherInput.classList.add('d-none');
+                otherInput.removeAttribute('required');
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const form = document.querySelector('form');
+    
+            form.onsubmit = function(e) {
+                let isValid = true;
+        
+        // Find all checkbox containers marked as required
+                const requiredGroups = document.querySelectorAll('.required-group');
+        
+                requiredGroups.forEach(group => {
+                    const checkboxes = group.querySelectorAll('input[type="checkbox"]');
+                    const label = group.getAttribute('data-label');
+            
+            // Check if at least one checkbox in this group is checked
+            const isChecked = Array.from(checkboxes).some(cb => cb.checked);
+            
+            if (!isChecked) {
+                alert("Please select at least one option for: " + label);
+                isValid = false;
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault(); // Stop the form from submitting
+            return false;
+        }
+        return true;
+    };
+});
+
+    </script>
+</body>
+</html>

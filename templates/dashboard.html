@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="#">FormLancer</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<style>
+        .hero-section {
+            background: linear-gradient(135deg, #0d6efd 0%, #000000 100%);
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            align-items: center;
+        }
+        .logo-img {
+            width: 120px; /* Adjust size as needed */
+            margin-bottom: 20px;
+        }
+    </style>
+
+<head>
+    
+    <title>Dashboard | {{ user.username }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-dark text-white d-flex justify-content-between">
+        <h5 class="mb-0">My Forms (FR-TF.01)</h5>
+        <a href="{{ url_for('create_new_form', username=user.username) }}" class="btn btn-sm btn-success">+ Create New Form</a>
+    </div>
+    <div class="list-group list-group-flush">
+        {% for form in user.forms %}
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <strong>{{ form.name }}</strong><br>
+                <small class="text-muted">Link: /share/{{ user.username }}/{{ form.id }}</small>
+            </div>
+            
+            <div>
+                <a href="{{ url_for('build_form', username=user.username, form_id=form.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <button class="btn btn-sm btn-info text-white" onclick="copyLink('{{ form.id }}')">Copy Link</button>
+                <form action="{{ url_for('delete_form', form_id=form.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure? This will delete the form and all its responses!');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</head>
+
+<body class="bg-light container mt-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Editor: {{ user.username }}</h1>
+            <p class="text-muted">Manage your video project intake</p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('admin_stats') }}" class="btn btn-outline-primary">Admin Stats</a>
+            <a href="{{ url_for('export_data', username=user.username) }}" class="btn btn-outline-dark">Export to CSV</a>
+            <button onclick="copyLink()" class="btn btn-info text-white">Copy Share Link</button>
+        </div>
+    </div>
+    <div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 bg-primary text-white shadow-sm p-3">
+            <small>New Leads</small>
+            <h3>{{ requests|selectattr('status', 'equalto', 'New')|list|length }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 bg-success text-white shadow-sm p-3">
+            <small>Completed Projects</small>
+            <h3>{{ requests|selectattr('status', 'equalto', 'Completed')|list|length }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 bg-dark text-white shadow-sm p-3">
+            <small>Active Forms</small>
+            <h3>{{ user.forms|length }}</h3>
+        </div>
+    </div>
+</div>
+    <div class="row mb-3 g-2">
+    <div class="col-md-8">
+        <input type="text" id="searchInput" class="form-control" placeholder="Search by client name..." onkeyup="filterTable()">
+    </div>
+    
+    <div class="col-md-4">
+        <select id="statusFilter" class="form-select" onchange="filterTable()">
+            <option value="">All Statuses</option>
+            <option value="New">New</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+            <option value="Canceled">Cancelled</option>
+        </select>
+    </div>
+</div>
+
+    <div class="card shadow border-0 mb-4">
+        <div class="card-header bg-dark text-white">Active Project Requests</div>
+        <div class="table-responsive shadow-sm rounded">
+    <table class="table table-hover align-middle mb-0 bg-white">
+        <thead class="table-light">
+            <tr>
+                <th>Status</th>
+                <th>Client@ Date</th> <th>Form ID</th>
+                <th>Responses & Files</th> 
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in requests %}
+            <tr>
+                <td>
+                    <form action="{{ url_for('update_status', request_id=req.id) }}" method="POST">
+                        <select name="status" class="form-select form-select-sm border-0 bg-light fw-bold" onchange="this.form.submit()">
+                            <option value="New" {% if req.status == 'New' %}selected{% endif %}>🆕 New</option>
+                            <option value="In Progress" {% if req.status == 'In Progress' %}selected{% endif %}>⏳ In Progress</option>
+                            <option value="Completed" {% if req.status == 'Completed' %}selected{% endif %}>✅ Completed</option>
+                            <option value="Canceled" {% if req.status == 'Canceled' %}selected{% endif %}>❌ Canceled</option>
+                        </select>
+                    </form>
+                </td>
+
+                <td>
+                    <div class="fw-bold">{{ req.client_name }}</div>
+                    <div class="text-muted small">Request #{{ req.id }}</div>
+                    <div class="text-muted extra-small" style="font-size: 0.75rem;">
+                        📅 {{ req.created_at.strftime('%b %d, %Y | %H:%M') if req.created_at else 'No Date' }}
+                    </div>
+                </td>
+
+                <td><span class="badge bg-secondary">#{{ req.form_id }}</span></td>
+
+                <td>
+                    <div style="max-width: 400px; font-size: 0.85rem;">
+                        {% set data = req.submitted_data|list_from_json %}
+                        {% for key, value in data.items() %}
+                            <div class="mb-1">
+                                <strong>{{ key }}:</strong> 
+                                {% if value is string and value.startswith('FILE:') %}
+                                    <a href="{{ url_for('download_file', filename=value[5:]) }}" 
+                                       class="btn btn-sm btn-link p-0 text-decoration-none" target="_blank">
+                                       📁 View Attachment
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">{{ value }}</span>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </td>
+
+                <td class="text-end">
+                    <form action="{{ url_for('delete_request', request_id=req.id) }}" method="POST" onsubmit="return confirm('Delete this request?');">
+                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center py-4 text-muted">No submissions found yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+    </div>
+    <td>
+
+    </td>
+<div class="card mb-4 shadow-sm border-warning">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">Notification Settings (FR-TF.04)</h5>
+    </div>
+    <div class="card-body">
+        <form action="{{ url_for('update_settings', username=user.username) }}" method="POST">
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <label class="small fw-bold">Notification Email</label>
+                    <input type="email" name="freelancer_email" class="form-control" value="{{ user.email or '' }}" placeholder="email@gmail.com">
+                </div>
+                <div class="col-md-5">
+                    <label class="small fw-bold">App Password</label>
+                    <input type="password" name="email_password" class="form-control" value="{{ user.email_app_password or '' }}" placeholder="Enter SMTP App Password">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-dark w-100">Update</button>
+                </div>
+            </div>
+            <div class="mt-2">
+                <small class="text-muted italic">Note: Used for real-time notifications when clients submit forms.</small>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <script>
+        function copyLink(formId) {
+    // If no formId is passed, we can't copy a specific form
+    if (!formId) {
+        alert("Please use the 'Copy Link' button next to a specific form.");
+        return;
+    }
+    const shareUrl = window.location.origin + "/share/{{ user.username }}/" + formId;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        alert("Link copied: " + shareUrl);
+    });
+}
+
+        function filterTable() {
+    let input = document.getElementById("searchInput").value.toUpperCase();
+    let status = document.getElementById("statusFilter").value.toUpperCase();
+    let rows = document.querySelector("tbody").rows;
+
+    for (let i = 0; i < rows.length; i++) {
+        let nameCol = rows[i].cells[1].textContent.toUpperCase();
+        let statusCol = rows[i].cells[0].querySelector('select').value.toUpperCase();
+        
+        let nameMatch = nameCol.indexOf(input) > -1;
+        let statusMatch = status === "" || statusCol === status;
+
+        rows[i].style.display = (nameMatch && statusMatch) ? "" : "none";
+    }
+}
+
+function copyLink(formId) {
+    const shareUrl = window.location.origin + "/share/{{ user.username }}/" + formId;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        // Change button text temporarily
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "✅ Copied!";
+        btn.classList.replace('btn-info', 'btn-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.replace('btn-success', 'btn-info');
+        }, 2000);
+    });
+}
+
+
+    </script>
+</body>
+</html>
