@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="#">FormLancer</a>
-        <div class="navbar-nav ms-auto">
-            <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+        <a class="navbar-brand" href="#">FreeLauncher</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
         </div>
     </div>
 </nav>
@@ -24,7 +30,7 @@
     </style>
 
 <head>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | {{ user.username }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <div class="card mb-4 shadow-sm">
@@ -104,13 +110,14 @@
 
     <div class="card shadow border-0 mb-4">
         <div class="card-header bg-dark text-white">Active Project Requests</div>
-        <div class="table-responsive shadow-sm rounded">
+       <div class="table-responsive shadow-sm rounded border">
     <table class="table table-hover align-middle mb-0 bg-white">
         <thead class="table-light">
             <tr>
-                <th>Status</th>
-                <th>Client@ Date</th> <th>Form ID</th>
-                <th>Responses & Files</th> 
+                <th style="min-width: 150px;">Status</th>
+                <th style="min-width: 180px;">Client & Date</th>
+                <th>Form ID</th>
+                <th style="min-width: 300px;">Responses & Files</th> 
                 <th class="text-end">Actions</th>
             </tr>
         </thead>
@@ -131,7 +138,7 @@
                 <td>
                     <div class="fw-bold">{{ req.client_name }}</div>
                     <div class="text-muted small">Request #{{ req.id }}</div>
-                    <div class="text-muted extra-small" style="font-size: 0.75rem;">
+                    <div class="text-muted" style="font-size: 0.75rem;">
                         📅 {{ req.created_at.strftime('%b %d, %Y | %H:%M') if req.created_at else 'No Date' }}
                     </div>
                 </td>
@@ -139,14 +146,14 @@
                 <td><span class="badge bg-secondary">#{{ req.form_id }}</span></td>
 
                 <td>
-                    <div style="max-width: 400px; font-size: 0.85rem;">
+                    <div style="min-width: 250px; max-width: 450px; font-size: 0.85rem; white-space: normal;">
                         {% set data = req.submitted_data|list_from_json %}
                         {% for key, value in data.items() %}
-                            <div class="mb-1">
-                                <strong>{{ key }}:</strong> 
+                            <div class="mb-1 border-bottom pb-1" style="word-break: break-word;">
+                                <strong class="text-dark">{{ key }}:</strong> 
                                 {% if value is string and value.startswith('FILE:') %}
                                     <a href="{{ url_for('download_file', filename=value[5:]) }}" 
-                                       class="btn btn-sm btn-link p-0 text-decoration-none" target="_blank">
+                                       class="btn btn-sm btn-link p-0 text-decoration-none d-block" target="_blank">
                                        📁 View Attachment
                                     </a>
                                 {% else %}
@@ -159,13 +166,17 @@
 
                 <td class="text-end">
                     <form action="{{ url_for('delete_request', request_id=req.id) }}" method="POST" onsubmit="return confirm('Delete this request?');">
-                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                        <button class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
                     </form>
                 </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="5" class="text-center py-4 text-muted">No submissions found yet.</td>
+                <td colspan="5" class="text-center py-5 text-muted">
+                    <p class="mb-0">No submissions found yet. Share your form link to get started!</p>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -201,7 +212,9 @@
     </div>
 </div>
 
-    <script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> 
+   <script>
         function copyLink(formId) {
     // If no formId is passed, we can't copy a specific form
     if (!formId) {
